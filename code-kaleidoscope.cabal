@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 5bda25d491fd1d3b5445f11684fd37fa41332ee7464418883e2244dc6b9d783e
+-- hash: 032cf17914579c823ed6c3121c4e45d000ec5d4ce86b73a5513ffcbd40a61afa
 
 name:           code-kaleidoscope
 version:        0.1.0.0
@@ -47,7 +47,7 @@ executable code-kaleidoscope-exe
       QuickCheck
     , base >=4.7 && <5
     , code-kaleidoscope
-    , random
+    , mtl
     , reanimate
     , reanimate-svg
   default-language: Haskell2010

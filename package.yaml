@@ -38,7 +38,7 @@ executables:
     - reanimate
     - reanimate-svg
     - QuickCheck
-    - random
+    - mtl
 
 tests:
   code-kaleidoscope-test:

@@ -5,6 +5,7 @@ import Reanimate
 import Reanimate.Builtin.Documentation
 import Control.Applicative
 import Control.Monad
+import Control.Monad.State
 import Test.QuickCheck.Gen
 import Test.QuickCheck.Random
 import Data.List
@@ -27,11 +28,11 @@ reflectPoint (px, py) (Line m b) = (x, y)
 reflectPath :: [Point] -> Line -> [Point]
 reflectPath path line = map (flip reflectPoint line) path
 
+fromPolar r theta = (r * cos theta, r * sin theta)
 
 evenRadialPoints :: Int -> [Point]
 evenRadialPoints n = points
     where
-        fromPolar r theta = (r * cos theta, r * sin theta)
         angle = pi / (fromIntegral n)
         segments = take n $ iterate (+ angle) 0.0
         points = map (fromPolar 1.0) segments
@@ -46,20 +47,52 @@ randomPoint bounds = liftM2 (,) (choose bounds) (choose bounds)
 randomPoints :: Int -> (Double, Double) -> [Point]
 randomPoints n bounds = unGen (vectorOf n $ randomPoint bounds) (mkQCGen 1) n
 
+randomTranslation :: (Double, Double) -> [Double] -> Gen Point
+randomTranslation radiusRange angles = liftM2 fromPolar (choose radiusRange) (elements angles)
+        
+applyTranslation :: State (Point, [Point]) Point
+applyTranslation = do
+    ((px, py), translations) <- get
+    let (tx, ty) = head translations
+    let next = (px + tx, py + ty)
+    put $ (next, tail translations)
+    return next
+
+applyTranslations :: [Point] -> Point -> [Point]
+applyTranslations translations start = result
+    where
+        (result, _) = runState (replicateM (length translations) applyTranslation) (start, translations)
+
+randomPath :: Int -> (Double, Double) -> [Double] -> [Point]
+randomPath n bounds angles = path
+    where
+        gen = mkQCGen 1
+        start = unGen (randomPoint bounds) gen 1
+        translations = unGen (vectorOf n $ randomTranslation bounds angles) gen n
+        path = applyTranslations translations start
+
+
+
 chunk :: Int -> [a] -> [[a]]
 chunk n [] = []
 chunk n xs = [take n xs] ++ (chunk n $ drop n xs)
+
+
+getAngles :: Double -> [Double]
+getAngles angle = take n $ map (* angle) [1..]
+    where
+        n = floor $ (2*pi) / angle
 
 main :: IO ()
 main = reanimate $ docEnv $ pauseAtEnd 3 $ mkAnimation 5 $ \t ->
     partialSvg t $ pathify $ mkGroup $
     map mkLinePath (reflectedPath ++ unreflectedPath)
     where
-        radialPoints = evenRadialPoints 5
-        reflectedPoints = map (\(x, y) -> (-x, -y)) radialPoints
-        -- lines = map (uncurry mkLn) $ zip radialPoints reflectedPoints
-        lines = defineRadialSymmetries 5
-        randomPath = randomPoints 8 (0.5, 4.0)
-        reflectedPath = map (reflectPath randomPath) lines
+        lines = defineRadialSymmetries 9
+        pathLength = 20
+        pathSegmentBounds = (0.5, 2.5)
+        angles = getAngles (pi/2)
+        path = randomPath pathLength pathSegmentBounds angles
+        reflectedPath = map (reflectPath path) lines
         unreflectedPath = map (reflectPath (head reflectedPath)) lines
         
