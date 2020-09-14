@@ -66,7 +66,7 @@ applyTranslations translations start = result
 randomPath :: Int -> (Double, Double) -> [Double] -> [Point]
 randomPath n bounds angles = path
     where
-        gen = mkQCGen 1
+        gen = mkQCGen 7
         start = unGen (randomPoint bounds) gen 1
         translations = unGen (vectorOf n $ randomTranslation bounds angles) gen n
         path = applyTranslations translations start
@@ -79,8 +79,10 @@ chunk n xs = [take n xs] ++ (chunk n $ drop n xs)
 
 
 getAngles :: Double -> [Double]
-getAngles angle = take n $ map (* angle) [1..]
+getAngles angle = anglesBelowPi ++ anglesAbovePi
     where
+        anglesBelowPi = take (n `div` 2 - 1) $ map (* angle) [1..]
+        anglesAbovePi = take (n `div` 2 - 1) $ map ((+ pi) . (* angle)) [1..]
         n = floor $ (2*pi) / angle
 
 main :: IO ()
@@ -91,7 +93,7 @@ main = reanimate $ docEnv $ pauseAtEnd 3 $ mkAnimation 5 $ \t ->
         lines = defineRadialSymmetries 9
         pathLength = 20
         pathSegmentBounds = (0.5, 2.5)
-        angles = getAngles (pi/2)
+        angles = getAngles (pi/3)
         path = randomPath pathLength pathSegmentBounds angles
         reflectedPath = map (reflectPath path) lines
         unreflectedPath = map (reflectPath (head reflectedPath)) lines
