@@ -39,6 +39,7 @@ executables:
     - reanimate-svg
     - QuickCheck
     - mtl
+    - JuicyPixels
 
 tests:
   code-kaleidoscope-test:

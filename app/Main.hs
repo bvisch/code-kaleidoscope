@@ -9,6 +9,8 @@ import Control.Monad.State
 import Test.QuickCheck.Gen
 import Test.QuickCheck.Random
 import Data.List
+import Codec.Picture.Types
+import Numeric
 
 type Point = (Double, Double)
 data Line = Line { slope :: Double, intercept :: Double }
@@ -63,10 +65,10 @@ applyTranslations translations start = result
     where
         (result, _) = runState (replicateM (length translations) applyTranslation) (start, translations)
 
-randomPath :: Int -> (Double, Double) -> [Double] -> [Point]
-randomPath n bounds angles = path
+randomPath :: Int -> Int -> (Double, Double) -> [Double] -> [Point]
+randomPath seed n bounds angles = path
     where
-        gen = mkQCGen 7
+        gen = mkQCGen seed
         start = unGen (randomPoint bounds) gen 1
         translations = unGen (vectorOf n $ randomTranslation bounds angles) gen n
         path = applyTranslations translations start
@@ -82,19 +84,20 @@ getAngles :: Double -> [Double]
 getAngles angle = anglesBelowPi ++ anglesAbovePi
     where
         anglesBelowPi = take (n `div` 2 - 1) $ map (* angle) [1..]
-        anglesAbovePi = take (n `div` 2 - 1) $ map ((+ pi) . (* angle)) [1..]
+        anglesAbovePi = map (+ pi) anglesBelowPi
         n = floor $ (2*pi) / angle
 
 main :: IO ()
-main = reanimate $ docEnv $ pauseAtEnd 3 $ mkAnimation 5 $ \t ->
-    partialSvg t $ pathify $ mkGroup $
+main = reanimate $ docEnv $ playThenReverseA $ pauseAtEnd 1 $ mkAnimation 5 $ \t ->
+    partialSvg t $ pathify $ Reanimate.scale 0.33 $ mkGroup $ zipWith ($) colours $
     map mkLinePath (reflectedPath ++ unreflectedPath)
     where
         lines = defineRadialSymmetries 9
         pathLength = 20
         pathSegmentBounds = (0.5, 2.5)
         angles = getAngles (pi/3)
-        path = randomPath pathLength pathSegmentBounds angles
+        path = randomPath 7 pathLength pathSegmentBounds angles
         reflectedPath = map (reflectPath path) lines
         unreflectedPath = map (reflectPath (head reflectedPath)) lines
+        colours = map withStrokeColorPixel $ cycle [(PixelRGBA8 53 92 125 255), (PixelRGBA8 108 91 123 255), (PixelRGBA8 246 114 128 255)] --["#355C7D", "#6C5B7B", "#C06C84", "#f67280"]
         

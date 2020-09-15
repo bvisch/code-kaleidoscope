@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 032cf17914579c823ed6c3121c4e45d000ec5d4ce86b73a5513ffcbd40a61afa
+-- hash: 578bafa0659e9256cf6ab5fe9f09f418413107e52718b4fce337128fc3258c03
 
 name:           code-kaleidoscope
 version:        0.1.0.0
@@ -44,7 +44,8 @@ executable code-kaleidoscope-exe
       app
   ghc-options: -threaded -rtsopts -with-rtsopts=-N
   build-depends:
-      QuickCheck
+      JuicyPixels
+    , QuickCheck
     , base >=4.7 && <5
     , code-kaleidoscope
     , mtl
